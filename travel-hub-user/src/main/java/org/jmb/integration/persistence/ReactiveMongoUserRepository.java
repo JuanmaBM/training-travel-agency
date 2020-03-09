@@ -4,19 +4,20 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import org.bson.Document;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jmb.domain.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mongodb.BasicDBObject;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 import io.quarkus.mongodb.ReactiveMongoClient;
 import io.quarkus.mongodb.ReactiveMongoCollection;
-import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
@@ -56,15 +57,15 @@ public class ReactiveMongoUserRepository implements UserRepository {
     }
 
     @Override
-    public CompletionStage<Void> update(final User user, final String username) {
+    public CompletionStage<UpdateResult> update(final User user, final String username) {
         final Document userDocument = toDocument(user);
-        mongoCollection.updateOne(Filters.eq(IDENTIFIED_FIELD, username), userDocument);
-        return CompletableFuture.completedFuture(null);
+        final BasicDBObject setQuery = new BasicDBObject("$set", userDocument);
+        return mongoCollection.updateOne(Filters.eq(IDENTIFIED_FIELD, username), setQuery);
     }
 
-    @Override public CompletionStage<Void> delete(String username) {
-        mongoCollection.deleteOne(Filters.eq(IDENTIFIED_FIELD));
-        return CompletableFuture.completedFuture(null);
+    @Override
+    public CompletionStage<DeleteResult> delete(String username) {
+        return mongoCollection.deleteOne(Filters.eq(IDENTIFIED_FIELD, username));
     }
 
     @Override public CompletionStage<List<User>> findAll() {
@@ -74,24 +75,22 @@ public class ReactiveMongoUserRepository implements UserRepository {
             .run();
     }
 
-    @Override public CompletionStage<User> findByUsername(String username) {
-        return mongoCollection.find(Filters.eq("username", username))
-            .map(toUser)
+    @Override public CompletionStage<Optional<User>> findByUsername(String username) {
+        return mongoCollection.find(Filters.eq(IDENTIFIED_FIELD, username))
             .limit(1)
+            .map(toUser)
             .findFirst()
-            .run()
-            .thenApply(optional -> optional.orElse(null));
+            .run();
     }
 
     private Document toDocument(User user) {
-        final Document userDocument = new Document();
-        userDocument.append("name", user.getName())
+        return new Document()
+            .append("name", user.getName())
             .append("surname", user.getSurname())
             .append("email", user.getEmail())
             .append(IDENTIFIED_FIELD, user.getUserName())
             .append("birthDate", user.getBirthDate())
             .append("nif", user.getNif());
-        return userDocument;
     }
 
 }

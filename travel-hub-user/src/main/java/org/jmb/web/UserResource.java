@@ -10,11 +10,13 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 
 import org.jmb.business.UserService;
 import org.jmb.domain.User;
+import org.jmb.integration.persistence.UserRepository;
 
-import java.util.List;
 import java.util.concurrent.CompletionStage;
 
 @Path("/user")
@@ -22,33 +24,50 @@ import java.util.concurrent.CompletionStage;
 @Consumes(MediaType.APPLICATION_JSON)
 public class UserResource {
 
-    @Inject private UserService userService;
+    private UserService userService;
+
+    @Inject
+    public UserResource(final UserService userService) {
+        this.userService = userService;
+    }
 
     @GET
-    public CompletionStage<List<User>> findAll() {
-        return userService.findAll();
+    public CompletionStage<Response> findAll() {
+        return userService.findAll()
+            .thenApplyAsync(x -> Response.ok(x).build())
+            .exceptionally(ex -> Response.status(500).entity(ex).build());
     }
 
     @GET
     @Path("/{username}")
-    public CompletionStage<User> findByUsername(@PathParam("username") final String username) {
-        return userService.findByUsername(username);
+    public CompletionStage<Response> findByUsername(@PathParam("username") final String username) {
+        return userService.findByUsername(username)
+            .thenApplyAsync(x -> x.map(Response::ok)
+                .map(ResponseBuilder::build)
+                .orElse(Response.status(404).build()))
+            .exceptionally(ex -> Response.status(500).entity(ex).build());
     }
 
     @POST
-    public CompletionStage<Void> create(final User user) {
-        return userService.create(user);
+    public CompletionStage<Response> create(final User user) {
+        return userService.create(user)
+            .thenApplyAsync(x -> Response.status(201).build())
+            .exceptionally(ex -> Response.status(500).entity(ex).build());
     }
 
     @PUT
     @Path("/{username}")
-    public CompletionStage<Void> update(@PathParam("username") final String username, final User user) {
-        return userService.update(user, username);
+    public CompletionStage<Response> update(@PathParam("username") final String username, final User user) {
+        return userService.update(user, username)
+            .thenApplyAsync(x -> Response.status(204).build())
+            .exceptionally(ex -> Response.status(500).entity(ex).build());
     }
 
     @DELETE
     @Path("/{username}")
-    public CompletionStage<Void> delete(@PathParam("username") final String username) {
-        return userService.delete(username);
+    public CompletionStage<Response> delete(@PathParam("username") final String username) {
+        return userService.delete(username)
+            .thenApplyAsync(x -> Response.status(204).build())
+            .exceptionally(ex -> Response.status(500).entity(ex).build());
     }
 }

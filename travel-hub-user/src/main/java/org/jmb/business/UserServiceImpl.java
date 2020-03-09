@@ -7,6 +7,7 @@ import org.jmb.domain.User;
 import org.jmb.integration.persistence.UserRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -16,28 +17,31 @@ public class UserServiceImpl implements UserService {
     @Inject private UserRepository userRepository;
 
     @Override
-    public CompletionStage<Void> create(User user) {
+    public CompletionStage create(User user) {
         return isValid(user)
             ? userRepository.create(user)
             : CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public CompletionStage<Void> update(User user, String username) {
+    public CompletionStage update(User user, String username) {
         return userRepository.update(user, username);
     }
 
-    @Override public CompletionStage<Void> delete(String username) {
+    @Override
+    public CompletionStage delete(String username) {
         return username != null
             ? userRepository.delete(username)
             : CompletableFuture.completedFuture(null);
     }
 
-    @Override public CompletionStage<List<User>> findAll() {
+    @Override
+    public CompletionStage<List<User>> findAll() {
         return userRepository.findAll();
     }
 
-    @Override public CompletionStage<User> findByUsername(String username) {
+    @Override
+    public CompletionStage<Optional<User>> findByUsername(String username) {
         return username != null
             ? userRepository.findByUsername(username)
             : CompletableFuture.completedFuture(null);

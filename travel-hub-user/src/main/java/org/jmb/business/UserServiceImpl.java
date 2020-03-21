@@ -2,6 +2,7 @@ package org.jmb.business;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.validation.ValidationException;
 
 import org.jmb.domain.User;
 import org.jmb.integration.persistence.UserRepository;
@@ -17,15 +18,20 @@ public class UserServiceImpl implements UserService {
     @Inject private UserRepository userRepository;
 
     @Override
-    public CompletionStage create(User user) {
+    public CompletableFuture create(User user) {
         return isValid(user)
             ? userRepository.create(user)
-            : CompletableFuture.completedFuture(null);
+            : CompletableFuture.supplyAsync(() -> {
+                throw new ValidationException();
+            });
     }
 
     @Override
     public CompletionStage update(User user, String username) {
-        return userRepository.update(user, username);
+        return isValid(user)
+            ? userRepository.update(user, username)
+            : CompletableFuture.supplyAsync(ValidationException::new);
+
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.jmb.web;
 
 import javax.inject.Inject;
+import javax.validation.ValidationException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -15,9 +16,11 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 
 import org.jmb.business.UserService;
 import org.jmb.domain.User;
-import org.jmb.integration.persistence.UserRepository;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 
 @Path("/user")
 @Produces(MediaType.APPLICATION_JSON)
@@ -30,6 +33,12 @@ public class UserResource {
     public UserResource(final UserService userService) {
         this.userService = userService;
     }
+
+    private final Function<CompletionException, Response> return422CodeIfValidationExceptionElseReturn500Code =
+        exception -> {
+        final Integer errorCode = exception.getCause() instanceof ValidationException ? 422 : 500;
+        return Response.status(errorCode).entity(exception).build();
+    };
 
     @GET
     public CompletionStage<Response> findAll() {
@@ -49,10 +58,10 @@ public class UserResource {
     }
 
     @POST
-    public CompletionStage<Response> create(final User user) {
+    public CompletableFuture<Response> create(final User user) {
         return userService.create(user)
             .thenApplyAsync(x -> Response.status(201).build())
-            .exceptionally(ex -> Response.status(500).entity(ex).build());
+            .exceptionally(return422CodeIfValidationExceptionElseReturn500Code);
     }
 
     @PUT
@@ -60,7 +69,7 @@ public class UserResource {
     public CompletionStage<Response> update(@PathParam("username") final String username, final User user) {
         return userService.update(user, username)
             .thenApplyAsync(x -> Response.status(204).build())
-            .exceptionally(ex -> Response.status(500).entity(ex).build());
+            .exceptionally(return422CodeIfValidationExceptionElseReturn500Code);
     }
 
     @DELETE

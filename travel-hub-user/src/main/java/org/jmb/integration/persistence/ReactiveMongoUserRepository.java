@@ -18,6 +18,7 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
@@ -51,9 +52,9 @@ public class ReactiveMongoUserRepository implements UserRepository {
         mongoCollection = mongoClient.getDatabase(USER_DATABASE).getCollection(USER_COLLECTION);
     }
 
-    @Override public CompletionStage<Void> create(User user) {
+    @Override public CompletableFuture<Void> create(User user) {
         final Document userDocument = toDocument(user);
-        return mongoCollection.insertOne(userDocument);
+        return mongoCollection.insertOne(userDocument).toCompletableFuture();
     }
 
     @Override

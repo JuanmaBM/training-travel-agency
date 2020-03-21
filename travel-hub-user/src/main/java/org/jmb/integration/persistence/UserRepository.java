@@ -6,6 +6,7 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 public interface UserRepository {
@@ -13,7 +14,7 @@ public interface UserRepository {
      * Create a User and store it in database
      * @param user
      */
-    CompletionStage<Void> create(final User user);
+    CompletableFuture<Void> create(final User user);
 
     /**
      * Update an user identifies by username parameter

@@ -2,3 +2,7 @@ spring:
   data:
     mongodb:
       database: hub
+
+context:
+  initializer:
+    classes: org.jmb.travelhubagency.Beans

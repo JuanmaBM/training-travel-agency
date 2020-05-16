@@ -10,4 +10,4 @@ data class Agency (
         @Id @JsonIgnore val _id: ObjectId?,
         val code: String,
         val name: String,
-        val hotels: List<Hotel>)
+        val hotels: List<Hotel>?)
